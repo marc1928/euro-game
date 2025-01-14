@@ -24,14 +24,20 @@ def count_previous_draws_results(results_file):
 def filter_numbers_by_frequency(freq_counter, option):
     """Filtre les numéros selon leur fréquence d'apparition."""
     sorted_numbers = sorted(freq_counter.items(), key=lambda x: x[1])
-    
+    third = len(sorted_numbers) // 3
+
     if option == "moins sortis":
-        return [num for num, _ in sorted_numbers[:len(sorted_numbers)//3]]
+        return [num for num, _ in sorted_numbers[:third]]
     elif option == "plus sortis":
-        return [num for num, _ in sorted_numbers[-len(sorted_numbers)//3:]]
+        return [num for num, _ in sorted_numbers[-third:]]
     elif option == "moyen":
-        third = len(sorted_numbers) // 3
         return [num for num, _ in sorted_numbers[third:-third]]
+    elif option == "mixte":
+        # Une combinaison équilibrée
+        less_frequent = [num for num, _ in sorted_numbers[:third]]
+        medium_frequent = [num for num, _ in sorted_numbers[third:-third]]
+        most_frequent = [num for num, _ in sorted_numbers[-third:]]
+        return less_frequent + medium_frequent + most_frequent
     else:
         print("Option invalide, tous les numéros seront considérés.")
         return list(freq_counter.keys())
@@ -87,7 +93,7 @@ def main():
         return
 
     # Choisir le type de biais
-    print("Choisissez l'analyse des numéros (options : 'moins sortis', 'plus sortis', 'moyen') :")
+    print("Choisissez l'analyse des numéros (options : 'moins sortis', 'plus sortis', 'moyen', 'mixte') :")
     bias_option = input("Votre choix : ").strip().lower()
     
     # Générer les tirages
