@@ -1,5 +1,6 @@
 import random
 import os
+from collections import Counter
 
 def read_numbers_from_file(filename):
     """Lit les numéros stockés dans un fichier."""
@@ -15,12 +16,32 @@ def read_numbers_from_file(filename):
         print("Le fichier contient des données invalides.")
         return []
 
+def count_previous_draws_results(results_file):
+    """Compte la fréquence des numéros dans les résultats précédents."""
+    previous_results = read_numbers_from_file(results_file)
+    return Counter(previous_results)
+
+def filter_numbers_by_frequency(freq_counter, option):
+    """Filtre les numéros selon leur fréquence d'apparition."""
+    sorted_numbers = sorted(freq_counter.items(), key=lambda x: x[1])
+    
+    if option == "moins sortis":
+        return [num for num, _ in sorted_numbers[:len(sorted_numbers)//3]]
+    elif option == "plus sortis":
+        return [num for num, _ in sorted_numbers[-len(sorted_numbers)//3:]]
+    elif option == "moyen":
+        third = len(sorted_numbers) // 3
+        return [num for num, _ in sorted_numbers[third:-third]]
+    else:
+        print("Option invalide, tous les numéros seront considérés.")
+        return list(freq_counter.keys())
+
 def generate_biased_numbers(available_numbers, count, max_value):
-    """Génère des numéros en fonction de ceux disponibles dans le fichier."""
+    """Génère des numéros biaisés en fonction des résultats précédents (fréquence)."""
     if not available_numbers:
         print("Aucun numéro disponible, génération aléatoire complète.")
         return sorted(random.sample(range(1, max_value + 1), count))
-    
+
     # Mélange des numéros stockés et génération aléatoire si nécessaire
     unique_numbers = list(set(available_numbers))  # Suppression des doublons
     generated = sorted(random.sample(unique_numbers, min(count, len(unique_numbers))))
@@ -30,11 +51,16 @@ def generate_biased_numbers(available_numbers, count, max_value):
             generated.append(remaining)
     return sorted(generated)
 
-def draw_numbers(main_file, stars_file):
-    """Simule un tirage en utilisant les numéros des fichiers."""
+def draw_numbers(main_file, stars_file, results_file=None, bias_option=None):
+    """Simule un tirage en utilisant les numéros des fichiers et en tenant compte des résultats précédents."""
     # Lecture des numéros principaux et des étoiles
     main_numbers_file = read_numbers_from_file(main_file)
     stars_numbers_file = read_numbers_from_file(stars_file)
+
+    # Compter les anciens résultats si un fichier de résultats est fourni
+    if results_file:
+        freq_counter = count_previous_draws_results(results_file)
+        main_numbers_file = filter_numbers_by_frequency(freq_counter, bias_option)
 
     # Génération biaisée
     main_numbers = generate_biased_numbers(main_numbers_file, 5, 50)
@@ -48,6 +74,7 @@ def main():
     # Fichiers contenant les numéros et les étoiles (doivent être dans le même répertoire)
     main_file = os.path.join(os.getcwd(), "main_numbers.txt")
     stars_file = os.path.join(os.getcwd(), "stars.txt")
+    results_file = os.path.join(os.getcwd(), "previous_results.txt")  # Fichier des anciens résultats (optionnel)
     
     # Nombre de tirages
     try:
@@ -59,9 +86,13 @@ def main():
         print("Veuillez entrer un nombre valide.")
         return
 
+    # Choisir le type de biais
+    print("Choisissez l'analyse des numéros (options : 'moins sortis', 'plus sortis', 'moyen') :")
+    bias_option = input("Votre choix : ").strip().lower()
+    
     # Générer les tirages
     for i in range(1, num_draws + 1):
-        draw_main, draw_stars = draw_numbers(main_file, stars_file)
+        draw_main, draw_stars = draw_numbers(main_file, stars_file, results_file, bias_option)
         print(f"Tirage {i} : Numéros principaux {draw_main}, Étoiles {draw_stars}")
 
 if __name__ == "__main__":
